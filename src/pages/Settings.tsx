@@ -351,7 +351,8 @@ export function SettingsPage() {
 	const [reasoningEffortLevel, setReasoningEffortLevel] =
 		createSignal<ReasoningEffortLevel>("medium");
 	const [savingReasoningEffort, setSavingReasoningEffort] = createSignal(false);
-	const [savingSlotReasoningLevels, setSavingSlotReasoningLevels] = createSignal<Set<string>>(new Set());
+	const [savingSlotReasoningLevels, setSavingSlotReasoningLevels] =
+		createSignal<Set<string>>(new Set());
 
 	// Compute uniform reasoning level from existing GPT mappings (both slots and custom)
 	// Returns: level if uniform, null if mixed, "none" if no GPT mappings
@@ -815,8 +816,6 @@ export function SettingsPage() {
 		}
 	});
 
-
-
 	// Handler for max retry interval change
 	const handleMaxRetryIntervalChange = async (value: number) => {
 		setSavingMaxRetryInterval(true);
@@ -1271,7 +1270,10 @@ export function SettingsPage() {
 			const newMappings = currentMappings.map((m) =>
 				m.name === slot.fromModel ? { ...m, alias: nextAlias } : m,
 			);
-			return { config: { ...config(), ampModelMappings: newMappings }, newAlias: nextAlias };
+			return {
+				config: { ...config(), ampModelMappings: newMappings },
+				newAlias: nextAlias,
+			};
 		};
 
 		const result = computeUpdatedConfig();
@@ -1293,10 +1295,7 @@ export function SettingsPage() {
 			const currentMapping = currentMappings.find(
 				(m) => m.name === slot.fromModel,
 			);
-			if (
-				originalAlias !== undefined &&
-				currentMapping?.alias === newAlias
-			) {
+			if (originalAlias !== undefined && currentMapping?.alias === newAlias) {
 				const revertedMappings = currentMappings.map((m) =>
 					m.name === slot.fromModel ? { ...m, alias: originalAlias } : m,
 				);
@@ -1460,6 +1459,14 @@ export function SettingsPage() {
 				{ value: "copilot-claude-sonnet-4", label: "copilot-claude-sonnet-4" },
 				{ value: "copilot-gemini-2.5-pro", label: "copilot-gemini-2.5-pro" },
 			],
+			kiro: [
+				// Kiro models - Amazon's AI coding assistant
+				{ value: "kiro-auto", label: "kiro-auto (recommended)" },
+				{ value: "kiro-claude-sonnet-4", label: "kiro-claude-sonnet-4" },
+				{ value: "kiro-claude-sonnet-4-5", label: "kiro-claude-sonnet-4-5" },
+				{ value: "kiro-claude-opus-4-5", label: "kiro-claude-opus-4-5" },
+				{ value: "kiro-claude-haiku-4-5", label: "kiro-claude-haiku-4-5" },
+			],
 		};
 
 		// Group real available models by provider
@@ -1487,6 +1494,10 @@ export function SettingsPage() {
 						m.ownedBy === "copilot" ||
 						(m.ownedBy === "claude" && m.id.startsWith("copilot-")),
 				)
+				.map((m) => ({ value: m.id, label: m.id })),
+			// Kiro models (Amazon's AI coding assistant)
+			kiro: models
+				.filter((m) => m.ownedBy === "kiro" || m.id.startsWith("kiro-"))
 				.map((m) => ({ value: m.id, label: m.id })),
 		};
 
@@ -1516,6 +1527,10 @@ export function SettingsPage() {
 				groupedModels.copilot.length > 0
 					? groupedModels.copilot
 					: fallbackModels.copilot,
+			kiro:
+				groupedModels.kiro.length > 0
+					? groupedModels.kiro
+					: fallbackModels.kiro,
 		};
 
 		return { customModels, builtInModels };
@@ -2412,7 +2427,8 @@ export function SettingsPage() {
 										builtInModels.anthropic.length > 0 ||
 										builtInModels.google.length > 0 ||
 										builtInModels.openai.length > 0 ||
-										builtInModels.copilot.length > 0;
+										builtInModels.copilot.length > 0 ||
+										builtInModels.kiro.length > 0;
 
 									if (!hasModels) {
 										return (
@@ -2490,6 +2506,17 @@ export function SettingsPage() {
 												<Show when={builtInModels.copilot.length > 0}>
 													<optgroup label="GitHub Copilot">
 														<For each={builtInModels.copilot}>
+															{(model) => (
+																<option value={model.value}>
+																	{model.label}
+																</option>
+															)}
+														</For>
+													</optgroup>
+												</Show>
+												<Show when={builtInModels.kiro.length > 0}>
+													<optgroup label="Kiro">
+														<For each={builtInModels.kiro}>
 															{(model) => (
 																<option value={model.value}>
 																	{model.label}
@@ -2707,7 +2734,8 @@ export function SettingsPage() {
 																			builtInModels.google[0]?.value ||
 																			slot.fromModel;
 																		// Use uniform reasoning level for new slots (or "none" if mixed)
-																		const effectiveLevel = uniformGptReasoningLevel() ?? "none";
+																		const effectiveLevel =
+																			uniformGptReasoningLevel() ?? "none";
 																		updateSlotMapping(
 																			slot.id,
 																			applyAmpGptReasoningLevel(
@@ -2845,6 +2873,17 @@ export function SettingsPage() {
 																				</For>
 																			</optgroup>
 																		</Show>
+																		<Show when={builtInModels.kiro.length > 0}>
+																			<optgroup label="Kiro">
+																				<For each={builtInModels.kiro}>
+																					{(model) => (
+																						<option value={model.value}>
+																							{model.label}
+																						</option>
+																					)}
+																				</For>
+																			</optgroup>
+																		</Show>
 																	</select>
 																);
 															})()}
@@ -2875,18 +2914,20 @@ export function SettingsPage() {
 															</Show>
 
 															{/* Per-slot reasoning dropdown - only show when target is GPT */}
-																<Show when={isEnabled() && isGptTarget()}>
-																	<select
-																		value={currentReasoningLevel()}
-																		onChange={(e) => {
-																			const level = e.currentTarget
-																				.value as AmpGptReasoningLevel;
-																			updateSlotReasoningLevel(slot.id, level);
-																		}}
-																		disabled={savingSlotReasoningLevels().has(slot.id)}
-																		class={`shrink-0 px-2 py-1 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700/50 rounded text-xs font-medium min-w-[70px] [&>option]:bg-white [&>option]:dark:bg-gray-800 [&>option]:text-gray-900 [&>option]:dark:text-gray-100 ${savingSlotReasoningLevels().has(slot.id) ? "opacity-50 cursor-not-allowed" : ""}`}
-																		title="GPT reasoning level for this slot"
-																	>
+															<Show when={isEnabled() && isGptTarget()}>
+																<select
+																	value={currentReasoningLevel()}
+																	onChange={(e) => {
+																		const level = e.currentTarget
+																			.value as AmpGptReasoningLevel;
+																		updateSlotReasoningLevel(slot.id, level);
+																	}}
+																	disabled={savingSlotReasoningLevels().has(
+																		slot.id,
+																	)}
+																	class={`shrink-0 px-2 py-1 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700/50 rounded text-xs font-medium min-w-[70px] [&>option]:bg-white [&>option]:dark:bg-gray-800 [&>option]:text-gray-900 [&>option]:dark:text-gray-100 ${savingSlotReasoningLevels().has(slot.id) ? "opacity-50 cursor-not-allowed" : ""}`}
+																	title="GPT reasoning level for this slot"
+																>
 																	<option value="none">None</option>
 																	<option value="minimal">Min</option>
 																	<option value="low">Low</option>
@@ -2962,10 +3003,11 @@ export function SettingsPage() {
 																onChange={(e) => {
 																	const newTargetBase = e.currentTarget.value;
 																	// Preserve current mapping's reasoning level
-																	const currentLevel = splitAmpGptReasoningAlias(
-																		mapping.alias,
-																		gptBaseModelSet(),
-																	).level;
+																	const currentLevel =
+																		splitAmpGptReasoningAlias(
+																			mapping.alias,
+																			gptBaseModelSet(),
+																		).level;
 																	const nextAlias = applyAmpGptReasoningLevel(
 																		newTargetBase,
 																		currentLevel,
@@ -3046,6 +3088,17 @@ export function SettingsPage() {
 																<Show when={builtInModels.copilot.length > 0}>
 																	<optgroup label="GitHub Copilot">
 																		<For each={builtInModels.copilot}>
+																			{(model) => (
+																				<option value={model.value}>
+																					{model.label}
+																				</option>
+																			)}
+																		</For>
+																	</optgroup>
+																</Show>
+																<Show when={builtInModels.kiro.length > 0}>
+																	<optgroup label="Kiro">
+																		<For each={builtInModels.kiro}>
 																			{(model) => (
 																				<option value={model.value}>
 																					{model.label}
@@ -3197,6 +3250,17 @@ export function SettingsPage() {
 														<Show when={builtInModels.copilot.length > 0}>
 															<optgroup label="GitHub Copilot">
 																<For each={builtInModels.copilot}>
+																	{(model) => (
+																		<option value={model.value}>
+																			{model.label}
+																		</option>
+																	)}
+																</For>
+															</optgroup>
+														</Show>
+														<Show when={builtInModels.kiro.length > 0}>
+															<optgroup label="Kiro">
+																<For each={builtInModels.kiro}>
 																	{(model) => (
 																		<option value={model.value}>
 																			{model.label}
@@ -3944,6 +4008,8 @@ export function SettingsPage() {
 													return builtInModels.iflow;
 												case "copilot":
 													return builtInModels.copilot;
+												case "kiro":
+													return builtInModels.kiro;
 												default:
 													return [];
 											}
