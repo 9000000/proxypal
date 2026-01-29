@@ -4073,20 +4073,69 @@ async fn fetch_copilot_quota_with_token(token: &str, login: &str) -> types::Copi
 #[tauri::command]
 async fn fetch_kiro_quota() -> Result<Vec<types::quota::KiroQuotaResult>, String> {
     use std::process::Command;
+    use std::path::PathBuf;
     use regex::Regex;
 
+    // Find kiro-cli binary - GUI apps don't inherit user's shell PATH
+    // So we check common installation locations
+    fn find_kiro_cli() -> Option<PathBuf> {
+        let candidates: Vec<PathBuf> = vec![
+            // User's local bin (most common for kiro-cli)
+            dirs::home_dir().map(|h| h.join(".local/bin/kiro-cli")),
+            // Homebrew paths
+            Some(PathBuf::from("/opt/homebrew/bin/kiro-cli")),
+            Some(PathBuf::from("/usr/local/bin/kiro-cli")),
+            // System paths
+            Some(PathBuf::from("/usr/bin/kiro-cli")),
+        ].into_iter().flatten().collect();
+
+        for path in candidates {
+            if path.exists() {
+                return Some(path);
+            }
+        }
+        
+        // Fallback: try PATH (works if launched from terminal)
+        if let Ok(output) = Command::new("which").arg("kiro-cli").output() {
+            if output.status.success() {
+                let path_str = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                if !path_str.is_empty() {
+                    return Some(PathBuf::from(path_str));
+                }
+            }
+        }
+        
+        None
+    }
+
+    let kiro_cli_path = match find_kiro_cli() {
+        Some(path) => path,
+        None => {
+            // CLI not installed
+            return Ok(vec![types::quota::KiroQuotaResult {
+                account_email: "Kiro Subscription".to_string(),
+                plan: "CLI Not Found".to_string(),
+                total_credits: 0.0,
+                used_credits: 0.0,
+                used_percent: 0.0,
+                fetched_at: chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
+                error: Some("kiro-cli not found. Install it to enable quota tracking.".to_string()),
+            }]);
+        }
+    };
+
     // Run kiro-cli chat --no-interactive "/usage"
-    // We assume kiro-cli is in the PATH
-    let output = Command::new("kiro-cli")
+    let output = Command::new(&kiro_cli_path)
         .args(&["chat", "--no-interactive", "/usage"])
         .output();
 
     match output {
         Ok(out) if out.status.success() => {
-            let stdout = String::from_utf8_lossy(&out.stdout);
+            // kiro-cli writes output to stderr, not stdout
+            let output_text = String::from_utf8_lossy(&out.stderr);
             // Strip ANSI escape sequences (colors, etc)
             let re_ansi = Regex::new(r"\x1B\[[0-9;]*[mK]").unwrap();
-            let clean_text = re_ansi.replace_all(&stdout, "");
+            let clean_text = re_ansi.replace_all(&output_text, "");
 
             let mut result = types::quota::KiroQuotaResult {
                 account_email: "Kiro Account".to_string(),
@@ -4098,10 +4147,10 @@ async fn fetch_kiro_quota() -> Result<Vec<types::quota::KiroQuotaResult>, String
                 error: None,
             };
 
-            // Parse Plan: | KIRO FREE or | KIRO PRO
-            let re_plan = Regex::new(r"\|\s*(KIRO\s+\w+)").unwrap();
+            // Parse Plan: Look for KIRO FREE or KIRO PRO anywhere in the text
+            let re_plan = Regex::new(r"KIRO\s+(FREE|PRO|ENTERPRISE)").unwrap();
             if let Some(cap) = re_plan.captures(&clean_text) {
-                result.plan = cap[1].to_string();
+                result.plan = format!("KIRO {}", &cap[1]);
             }
 
             // Parse Credits: (12.50 of 50 covered in plan)
@@ -4147,16 +4196,16 @@ async fn fetch_kiro_quota() -> Result<Vec<types::quota::KiroQuotaResult>, String
                 error: Some(format!("kiro-cli failed: {}", stderr)),
             }])
         }
-        Err(_) => {
-            // CLI not installed or not in PATH
+        Err(e) => {
+            // Execution error (permission denied, etc.)
             Ok(vec![types::quota::KiroQuotaResult {
                 account_email: "Kiro Subscription".to_string(),
-                plan: "CLI Not Found".to_string(),
+                plan: "Error".to_string(),
                 total_credits: 0.0,
                 used_credits: 0.0,
                 used_percent: 0.0,
                 fetched_at: chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
-                error: Some("kiro-cli not found. Install it to enable quota tracking.".to_string()),
+                error: Some(format!("Failed to run kiro-cli: {}", e)),
             }])
         }
     }
