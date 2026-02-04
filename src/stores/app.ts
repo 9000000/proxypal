@@ -88,16 +88,10 @@ function createAppStore() {
 		Record<string, CloudflareStatusUpdate>
 	>({});
 
-	// UI state
+	// UI state - Start directly on dashboard
 	const [currentPage, setCurrentPage] = createSignal<
-		| "welcome"
-		| "dashboard"
-		| "settings"
-		| "api-keys"
-		| "auth-files"
-		| "logs"
-		| "analytics"
-	>("welcome");
+		"dashboard" | "settings" | "api-keys" | "auth-files" | "logs" | "analytics"
+	>("dashboard");
 	const [isLoading, setIsLoading] = createSignal(false);
 	const [isInitialized, setIsInitialized] = createSignal(false);
 	const [sidebarExpanded, setSidebarExpanded] = createSignal(false);
@@ -143,35 +137,10 @@ function createAppStore() {
 			try {
 				const authState = await refreshAuthStatus();
 				setAuthStatus(authState);
-
-				// Determine initial page based on auth status
-				const hasAnyAuth =
-					authState.claude ||
-					authState.openai ||
-					authState.gemini ||
-					authState.qwen ||
-					authState.iflow ||
-					authState.vertex ||
-					authState.antigravity;
-				if (hasAnyAuth) {
-					setCurrentPage("dashboard");
-				}
 			} catch {
 				// Fall back to saved auth status
 				const authState = await getAuthStatus();
 				setAuthStatus(authState);
-
-				const hasAnyAuth =
-					authState.claude ||
-					authState.openai ||
-					authState.gemini ||
-					authState.qwen ||
-					authState.iflow ||
-					authState.vertex ||
-					authState.antigravity;
-				if (hasAnyAuth) {
-					setCurrentPage("dashboard");
-				}
 			}
 
 			// Setup event listeners

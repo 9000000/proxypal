@@ -4,4 +4,4 @@ export { AuthFilesPage } from "./AuthFiles";
 export { DashboardPage } from "./Dashboard";
 export { LogViewerPage } from "./LogViewer";
 export { SettingsPage } from "./Settings";
-export { WelcomePage } from "./Welcome";
+// WelcomePage removed - app starts directly on Dashboard
