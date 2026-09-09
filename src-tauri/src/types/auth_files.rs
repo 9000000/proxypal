@@ -41,17 +41,15 @@ pub struct AuthFile {
     pub last_refresh: Option<String>,
     /// Successful request count. CLIProxyAPI reports `success`; ProxyPal serializes camelCase.
     #[serde(
+        alias = "success",
         alias = "success_count",
-        alias = "successCount",
-        rename(serialize = "successCount", deserialize = "success"),
         skip_serializing_if = "Option::is_none"
     )]
     pub success_count: Option<u64>,
     /// Failed request count. CLIProxyAPI reports `failed`; ProxyPal serializes camelCase.
     #[serde(
+        alias = "failed",
         alias = "failure_count",
-        alias = "failureCount",
-        rename(serialize = "failureCount", deserialize = "failed"),
         skip_serializing_if = "Option::is_none"
     )]
     pub failure_count: Option<u64>,

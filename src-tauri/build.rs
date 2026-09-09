@@ -173,27 +173,27 @@ fn download_binary(binary_name: &str) {
     println!("cargo:warning=Sidecar binary downloaded successfully");
 }
 
+/// Canonicalize a version string: trim, drop a leading `v`, reject empty.
+fn normalize_version(raw: &str) -> Option<String> {
+    let version = raw.trim().trim_start_matches('v');
+    (!version.is_empty()).then(|| version.to_string())
+}
+
 /// The CLIProxyAPI version this build must bundle: `CLIPROXYAPI_VERSION` when set
 /// (CI/release), otherwise `scripts/sidecar-version`.
 fn pinned_sidecar_version() -> Option<String> {
-    if let Ok(value) = env::var("CLIPROXYAPI_VERSION") {
-        let trimmed = value.trim().trim_start_matches('v').to_string();
-        if !trimmed.is_empty() {
-            return Some(trimmed);
-        }
+    if let Some(version) = env::var("CLIPROXYAPI_VERSION")
+        .ok()
+        .and_then(|value| normalize_version(&value))
+    {
+        return Some(version);
     }
 
     let path = Path::new(env!("CARGO_MANIFEST_DIR"))
         .parent()?
         .join("scripts")
         .join("sidecar-version");
-    let raw = fs::read_to_string(path).ok()?;
-    let trimmed = raw.trim().trim_start_matches('v').to_string();
-    if trimmed.is_empty() {
-        None
-    } else {
-        Some(trimmed)
-    }
+    normalize_version(&fs::read_to_string(path).ok()?)
 }
 
 /// Read the bundled binary's self-reported version (`CLIProxyAPI Version: X, ...`).
@@ -201,25 +201,16 @@ fn pinned_sidecar_version() -> Option<String> {
 fn installed_sidecar_version(path: &Path) -> Option<String> {
     let output = Command::new(path).arg("--version").output().ok()?;
     let text = String::from_utf8_lossy(&output.stdout);
-    let marker = "Version:";
-    let rest = &text[text.find(marker)? + marker.len()..];
-    let version = rest
-        .trim_start()
-        .split(|c: char| c == ',' || c.is_whitespace())
-        .next()?
-        .trim_start_matches('v');
-    if version.is_empty() {
-        None
-    } else {
-        Some(version.to_string())
-    }
+    let rest = text.split_once("Version:")?.1;
+    // Trailing comma separates the version from the commit field.
+    normalize_version(rest.split_whitespace().next()?.trim_end_matches(','))
 }
 
 /// Returns the (installed, pinned) versions when a native build is about to bundle
 /// a sidecar binary that does not match the pin. Cross-compiled binaries cannot be
 /// executed on the build host, so the check is skipped for them.
 fn native_sidecar_version_mismatch(binary_path: &Path, target: &str) -> Option<(String, String)> {
-    if target != env::var("HOST").unwrap_or_default() {
+    if !env::var("HOST").is_ok_and(|host| host == target) {
         return None;
     }
     let pinned = pinned_sidecar_version()?;
@@ -232,11 +223,7 @@ fn native_sidecar_version_mismatch(binary_path: &Path, target: &str) -> Option<(
         );
         return None;
     };
-    if installed == pinned {
-        None
-    } else {
-        Some((installed, pinned))
-    }
+    (installed != pinned).then_some((installed, pinned))
 }
 
 fn get_binary_name(target: &str) -> String {
