@@ -39,9 +39,21 @@ pub struct AuthFile {
     pub updated_at: Option<String>,
     #[serde(alias = "last_refresh", skip_serializing_if = "Option::is_none")]
     pub last_refresh: Option<String>,
-    #[serde(alias = "success_count", skip_serializing_if = "Option::is_none")]
+    /// Successful request count. CLIProxyAPI reports `success`; ProxyPal serializes camelCase.
+    #[serde(
+        alias = "success_count",
+        alias = "successCount",
+        rename(serialize = "successCount", deserialize = "success"),
+        skip_serializing_if = "Option::is_none"
+    )]
     pub success_count: Option<u64>,
-    #[serde(alias = "failure_count", skip_serializing_if = "Option::is_none")]
+    /// Failed request count. CLIProxyAPI reports `failed`; ProxyPal serializes camelCase.
+    #[serde(
+        alias = "failure_count",
+        alias = "failureCount",
+        rename(serialize = "failureCount", deserialize = "failed"),
+        skip_serializing_if = "Option::is_none"
+    )]
     pub failure_count: Option<u64>,
     /// Priority for routing order (lower = higher priority). CLIProxyAPI v6.8.55+
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -82,6 +94,29 @@ mod tests {
         assert_eq!(file.last_refresh.as_deref(), Some("2026-07-10T12:02:00Z"));
         assert_eq!(file.success_count, Some(4));
         assert_eq!(file.failure_count, Some(1));
+    }
+
+    #[test]
+    fn deserializes_upstream_success_and_failed_counts() {
+        // CLIProxyAPI /v0/management/auth-files reports `success` and `failed`.
+        let value = serde_json::json!({
+            "id": "codex-account.json",
+            "name": "codex-account.json",
+            "provider": "openai",
+            "status": "ready",
+            "success": 12,
+            "failed": 3
+        });
+
+        let file: AuthFile = serde_json::from_value(value).unwrap();
+
+        assert_eq!(file.success_count, Some(12));
+        assert_eq!(file.failure_count, Some(3));
+
+        // The frontend contract stays camelCase.
+        let serialized = serde_json::to_value(&file).unwrap();
+        assert_eq!(serialized["successCount"], 12);
+        assert_eq!(serialized["failureCount"], 3);
     }
 
     #[test]

@@ -477,8 +477,6 @@ pub fn run() {
             // Management API Settings
             commands::settings::get_max_retry_interval,
             commands::settings::set_max_retry_interval,
-            commands::settings::get_log_size,
-            commands::settings::set_log_size,
             commands::settings::get_websocket_auth,
             commands::settings::set_websocket_auth,
             // Window behavior

@@ -677,11 +677,6 @@ export const en = {
         description: "Disable auth/model cooldown scheduling after failure states",
         label: "Disable Cooling",
       },
-      logBufferSize: {
-        description:
-          "Number of log entries to retain in memory. Higher values use more memory but preserve older logs.",
-        label: "Log Buffer Size",
-      },
       maxRetryCredentials: {
         description: "Maximum credentials tried per failed request (0 = try all)",
         label: "Max Retry Credentials",
@@ -769,7 +764,6 @@ export const en = {
       failedToSaveSetting: "Failed to save setting",
       failedToSaveThinkingBudget: "Failed to save thinking budget",
       failedToToggle: "Failed to toggle",
-      failedToUpdateLogSize: "Failed to update log size",
       failedToUpdateMaxRetryInterval: "Failed to update max retry interval",
       failedToUpdateModelMappingPriority: "Failed to update model mapping priority",
       failedToUpdateReasoningLevel: "Failed to update reasoning level",
@@ -781,7 +775,6 @@ export const en = {
       hostAndUsernameRequired: "Host and Username are required",
       latestVersion: "You're on the latest version",
       localApiKeysTakePrecedence: "Local API keys now take precedence over model mappings",
-      logBufferSizeUpdated: "Log buffer size updated",
       mappingAlreadyExists: "A mapping for '{{from}}' already exists",
       mappingUpdated: "Mapping updated",
       maxRetryIntervalUpdated: "Max retry interval updated",

@@ -197,6 +197,29 @@ describe("sidecar version resolution", () => {
   });
 });
 
+describe("sidecar pin consistency", () => {
+  const projectRoot = join(import.meta.dirname, "..");
+  const pinnedFile = readFileSync(join(projectRoot, "scripts", "sidecar-version"), "utf8").trim();
+
+  it("declares a concrete pin in scripts/sidecar-version", () => {
+    assert.match(pinnedFile, /^\d+\.\d+\.\d+$/);
+  });
+
+  it("keeps workflow pins in sync with scripts/sidecar-version", () => {
+    // CI and release both export CLIPROXYAPI_VERSION, which overrides the pin file.
+    for (const name of ["ci.yml", "release.yml"]) {
+      const workflow = readFileSync(join(projectRoot, ".github", "workflows", name), "utf8");
+      const match = workflow.match(/CLIPROXYAPI_VERSION:\s*"([^"]+)"/);
+      assert.ok(match, `${name} must declare a quoted CLIPROXYAPI_VERSION`);
+      assert.equal(
+        match[1],
+        pinnedFile,
+        `${name} pins ${match[1]} but scripts/sidecar-version pins ${pinnedFile}`,
+      );
+    }
+  });
+});
+
 describe("release sidecar metadata", () => {
   const projectRoot = join(import.meta.dirname, "..");
   const releaseWorkflow = readFileSync(

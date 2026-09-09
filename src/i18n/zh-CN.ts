@@ -668,10 +668,6 @@ export const zhCN = {
         description: "失败状态后禁用认证/模型冷却调度",
         label: "禁用冷却",
       },
-      logBufferSize: {
-        description: "内存中保留的日志条目数量。数值越高会占用更多内存，但可保留更早日志。",
-        label: "日志缓冲区大小",
-      },
       maxRetryCredentials: {
         description: "每次失败请求最多尝试的凭据数（0 = 尝试全部）",
         label: "最大重试凭据数",
@@ -758,7 +754,6 @@ export const zhCN = {
       failedToSaveSetting: "保存设置失败",
       failedToSaveThinkingBudget: "保存思考预算失败",
       failedToToggle: "切换失败",
-      failedToUpdateLogSize: "更新日志大小失败",
       failedToUpdateMaxRetryInterval: "更新最大重试间隔失败",
       failedToUpdateModelMappingPriority: "更新模型映射优先级失败",
       failedToUpdateReasoningLevel: "更新推理级别失败",
@@ -770,7 +765,6 @@ export const zhCN = {
       hostAndUsernameRequired: "Host 和 Username 为必填项",
       latestVersion: "你已是最新版本",
       localApiKeysTakePrecedence: "本地 API Key 现在优先于模型映射",
-      logBufferSizeUpdated: "日志缓冲区大小已更新",
       mappingAlreadyExists: "'{{from}}' 的映射已存在",
       mappingUpdated: "映射已更新",
       maxRetryIntervalUpdated: "最大重试间隔已更新",

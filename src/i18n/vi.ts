@@ -673,11 +673,6 @@ export const vi = {
         description: "Tắt lịch trình giảm nhiệt xác thực/mô hình sau trạng thái lỗi",
         label: "Tắt giảm nhiệt",
       },
-      logBufferSize: {
-        description:
-          "Số mục nhật ký giữ trong bộ nhớ. Giá trị cao hơn sử dụng nhiều bộ nhớ hơn nhưng giữ được nhật ký cũ hơn.",
-        label: "Kích thước bộ đệm nhật ký",
-      },
       maxRetryCredentials: {
         description: "Số khóa tối đa được thử cho mỗi yêu cầu thất bại (0 = thử tất cả)",
         label: "Số khóa thử lại tối đa",
@@ -765,7 +760,6 @@ export const vi = {
       failedToSaveSetting: "Lưu cài đặt thất bại",
       failedToSaveThinkingBudget: "Lưu ngân sách thinking thất bại",
       failedToToggle: "Chuyển đổi thất bại",
-      failedToUpdateLogSize: "Cập nhật kích thước nhật ký thất bại",
       failedToUpdateMaxRetryInterval: "Cập nhật khoảng thời gian thử lại tối đa thất bại",
       failedToUpdateModelMappingPriority: "Cập nhật ưu tiên ánh xạ model thất bại",
       failedToUpdateReasoningLevel: "Cập nhật mức suy luận thất bại",
@@ -777,7 +771,6 @@ export const vi = {
       hostAndUsernameRequired: "Host và Username là bắt buộc",
       latestVersion: "Bạn đang dùng phiên bản mới nhất",
       localApiKeysTakePrecedence: "API key cục bộ giờ được ưu tiên hơn ánh xạ model",
-      logBufferSizeUpdated: "Đã cập nhật kích thước bộ đệm nhật ký",
       mappingAlreadyExists: "Ánh xạ cho '{{from}}' đã tồn tại",
       mappingUpdated: "Đã cập nhật ánh xạ",
       maxRetryIntervalUpdated: "Đã cập nhật khoảng thời gian thử lại tối đa",

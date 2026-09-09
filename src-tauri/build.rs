@@ -36,6 +36,10 @@ fn main() {
         }
     }
     println!("cargo:rerun-if-changed=../.env");
+    // Re-run when the pinned sidecar version changes so a pin bump is verified
+    // against the bundled binary instead of silently shipping a stale sidecar.
+    println!("cargo:rerun-if-changed=../scripts/sidecar-version");
+    println!("cargo:rerun-if-env-changed=CLIPROXYAPI_VERSION");
 
     // Get the target triple for the current build
     let target = env::var("TARGET")
@@ -63,7 +67,16 @@ fn main() {
         let _ = fs::remove_file(&binary_path);
         true
     } else {
-        false
+        match native_sidecar_version_mismatch(&binary_path, &target) {
+            Some((installed, pinned)) => {
+                println!(
+                    "cargo:warning=Sidecar binary is v{} but the pin is v{}; re-downloading",
+                    installed, pinned
+                );
+                true
+            }
+            None => false,
+        }
     };
 
     if needs_download {
@@ -78,8 +91,8 @@ fn main() {
             );
         } else if is_ci {
             panic!(
-                "Sidecar binary missing or corrupted in CI: {}.\n\
-                The CI workflow must download and extract the binary before cargo build.\n\
+                "Sidecar binary missing, corrupted, or at the wrong version in CI: {}.\n\
+                The CI workflow must download the pinned binary before cargo build.\n\
                 Check the 'Download CLI Proxy API' step in your workflow.",
                 binary_name
             );
@@ -158,6 +171,72 @@ fn download_binary(binary_name: &str) {
     }
 
     println!("cargo:warning=Sidecar binary downloaded successfully");
+}
+
+/// The CLIProxyAPI version this build must bundle: `CLIPROXYAPI_VERSION` when set
+/// (CI/release), otherwise `scripts/sidecar-version`.
+fn pinned_sidecar_version() -> Option<String> {
+    if let Ok(value) = env::var("CLIPROXYAPI_VERSION") {
+        let trimmed = value.trim().trim_start_matches('v').to_string();
+        if !trimmed.is_empty() {
+            return Some(trimmed);
+        }
+    }
+
+    let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()?
+        .join("scripts")
+        .join("sidecar-version");
+    let raw = fs::read_to_string(path).ok()?;
+    let trimmed = raw.trim().trim_start_matches('v').to_string();
+    if trimmed.is_empty() {
+        None
+    } else {
+        Some(trimmed)
+    }
+}
+
+/// Read the bundled binary's self-reported version (`CLIProxyAPI Version: X, ...`).
+/// Only meaningful when the binary can execute on this host.
+fn installed_sidecar_version(path: &Path) -> Option<String> {
+    let output = Command::new(path).arg("--version").output().ok()?;
+    let text = String::from_utf8_lossy(&output.stdout);
+    let marker = "Version:";
+    let rest = &text[text.find(marker)? + marker.len()..];
+    let version = rest
+        .trim_start()
+        .split(|c: char| c == ',' || c.is_whitespace())
+        .next()?
+        .trim_start_matches('v');
+    if version.is_empty() {
+        None
+    } else {
+        Some(version.to_string())
+    }
+}
+
+/// Returns the (installed, pinned) versions when a native build is about to bundle
+/// a sidecar binary that does not match the pin. Cross-compiled binaries cannot be
+/// executed on the build host, so the check is skipped for them.
+fn native_sidecar_version_mismatch(binary_path: &Path, target: &str) -> Option<(String, String)> {
+    if target != env::var("HOST").unwrap_or_default() {
+        return None;
+    }
+    let pinned = pinned_sidecar_version()?;
+    let Some(installed) = installed_sidecar_version(binary_path) else {
+        // Fail open rather than re-downloading on every build, but say so: a
+        // silent skip would hide the stale-binary case this guard exists for.
+        println!(
+            "cargo:warning=Could not read the bundled sidecar version from {}; skipping the pin check",
+            binary_path.display()
+        );
+        return None;
+    };
+    if installed == pinned {
+        None
+    } else {
+        Some((installed, pinned))
+    }
 }
 
 fn get_binary_name(target: &str) -> String {

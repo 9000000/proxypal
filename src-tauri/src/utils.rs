@@ -48,8 +48,10 @@ pub fn detect_provider_from_model(model: &str) -> String {
         // Gemini 3.5 — Antigravity-only variants
         || model_lower == "gemini-3.5-flash"
         || model_lower == "gemini-3.5-flash-low"
-        // Gemini 3.6 — Antigravity-only variant
+        // Gemini 3.6/3.7/3.8 — Antigravity-only variants
         || model_lower == "gemini-3.6-flash-high"
+        || model_lower == "gemini-3.7-flash-high"
+        || model_lower == "gemini-3.8-flash-high"
     {
         return "antigravity".to_string();
     }
@@ -209,6 +211,24 @@ mod tests {
             detect_provider_from_model("gemini-3.6-flash-high"),
             "antigravity"
         );
+    }
+
+    #[test]
+    fn detect_provider_from_model_classifies_new_antigravity_flash_high_variants() {
+        assert_eq!(
+            detect_provider_from_model("gemini-3.7-flash-high"),
+            "antigravity"
+        );
+        assert_eq!(
+            detect_provider_from_model("gemini-3.8-flash-high"),
+            "antigravity"
+        );
+    }
+
+    #[test]
+    fn detect_provider_from_model_keeps_google_gemini_flash_variants_as_gemini() {
+        assert_eq!(detect_provider_from_model("gemini-3.7-flash"), "gemini");
+        assert_eq!(detect_provider_from_model("gemini-3.8-flash"), "gemini");
     }
 
     #[test]

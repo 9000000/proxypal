@@ -1,10 +1,8 @@
 import { createEffect, createSignal, Show, splitProps } from "solid-js";
 import { useI18n } from "../../i18n";
 import {
-  getLogSize,
   getMaxRetryInterval,
   saveConfig,
-  setLogSize,
   setMaxRetryInterval,
   startProxy,
   stopProxy,
@@ -36,9 +34,7 @@ export function ProxySettings(props: ProxySettingsProps) {
   const [showProxyPassword, setShowProxyPassword] = createSignal(false);
   const [showManagementKey, setShowManagementKey] = createSignal(false);
   const [maxRetryInterval, setMaxRetryIntervalState] = createSignal<number>(0);
-  const [logSize, setLogSizeState] = createSignal<number>(500);
   const [savingMaxRetryInterval, setSavingMaxRetryInterval] = createSignal(false);
-  const [savingLogSize, setSavingLogSize] = createSignal(false);
 
   createEffect(async () => {
     if (!local.proxyRunning) {
@@ -50,13 +46,6 @@ export function ProxySettings(props: ProxySettingsProps) {
       setMaxRetryIntervalState(interval);
     } catch (error) {
       console.error("Failed to fetch max retry interval:", error);
-    }
-
-    try {
-      const size = await getLogSize();
-      setLogSizeState(size);
-    } catch (error) {
-      console.error("Failed to fetch log size:", error);
     }
   });
 
@@ -70,19 +59,6 @@ export function ProxySettings(props: ProxySettingsProps) {
       toastStore.error(t("settings.toasts.failedToUpdateMaxRetryInterval"), String(error));
     } finally {
       setSavingMaxRetryInterval(false);
-    }
-  };
-
-  const handleLogSizeChange = async (value: number) => {
-    setSavingLogSize(true);
-    try {
-      await setLogSize(value);
-      setLogSizeState(value);
-      toastStore.success(t("settings.toasts.logBufferSizeUpdated"));
-    } catch (error) {
-      toastStore.error(t("settings.toasts.failedToUpdateLogSize"), String(error));
-    } finally {
-      setSavingLogSize(false);
     }
   };
 
@@ -446,43 +422,6 @@ export function ProxySettings(props: ProxySettingsProps) {
             />
             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
               {t("settings.network.maxRetryInterval.description")}
-            </p>
-          </label>
-
-          <label class="block">
-            <span class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-              {t("settings.network.logBufferSize.label")}
-              <Show when={savingLogSize()}>
-                <svg class="h-4 w-4 animate-spin text-brand-500" fill="none" viewBox="0 0 24 24">
-                  <circle
-                    class="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    stroke-width="4"
-                  />
-                  <path
-                    class="opacity-75"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    fill="currentColor"
-                  />
-                </svg>
-              </Show>
-            </span>
-            <input
-              class="transition-smooth mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-brand-500 disabled:opacity-50 dark:border-gray-600 dark:bg-gray-900"
-              disabled={savingLogSize()}
-              min="100"
-              onInput={(e) => {
-                const val = Math.max(100, Number.parseInt(e.currentTarget.value) || 500);
-                handleLogSizeChange(val);
-              }}
-              type="number"
-              value={logSize()}
-            />
-            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              {t("settings.network.logBufferSize.description")}
             </p>
           </label>
         </Show>
