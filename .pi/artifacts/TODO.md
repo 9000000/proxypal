@@ -18,27 +18,6 @@ status: waiting-ci | updated: 2026-07-10
 - [x] Fixed the reported format:check failure by formatting the restored Polime banner and i18n entries; local format, lint, TypeScript, Rust, and independent review passed.
 - [x] Bumped all version sources to v0.4.46, pushed commit `ce16e851`, and published annotated tag `v0.4.46`; workflow 29107432582 is queued.
 
-### 2026-08-09 - prepare ProxyPal v0.4.49 follow-ups
-status: done | updated: 2026-08-10
-
-#### Spec
-
-- Goal: prepare a locally verified v0.4.49 release candidate that exposes weighted round-robin, strengthens sidecar management smoke coverage, and generates release notes from the bundled sidecar tag.
-- Non-goals: do not push, tag, trigger GitHub Actions, publish a release, add dependencies, or expose CLIProxyAPI Home/plugin controls.
-
-- [x] Added failing coverage for weighted routing labels and pinned release-note lookup, then observed both turn green.
-- [x] Expanded sidecar smoke checks for stable configuration, logging, auth-files, and authenticated error contracts; provider OAuth flows and the upstream `log-size` 404 fallback remain manual to avoid external side effects.
-- [x] Added weighted round-robin to the routing selector and all locale catalogs.
-- [x] Made release-note metadata resolve and verify the pinned CLIProxyAPI tag.
-- [x] Synchronized ProxyPal v0.4.49 version and release-note sources.
-- [x] Ran required checks, inspected the complete diff, and obtained a clean independent review with no merge-blocking findings.
-
-### 2026-08-10 - harden v0.4.49 release publication gates
-status: done | updated: 2026-08-10
-
-- [x] Addressed independent-review findings on release permissions, draft/public ordering, fixed release identity, tag validation, and fail-closed artifact/notification behavior.
-- [x] Re-ran required checks and obtained a clean independent review of the final release workflow.
-
 ### 2026-08-10 - make Discord notifications non-blocking
 status: done | updated: 2026-08-10
 
@@ -122,9 +101,10 @@ status: done | updated: 2026-09-09
 - Non-goals: no app version bump/release, no AppConfig schema change, no cache-pricing implementation.
 
 ### 2026-09-09 - publish ProxyPal v0.4.53 (sidecar 7.2.155)
-status: active | updated: 2026-09-09
+status: done | updated: 2026-09-09
 
-- [ ] Pin sidecar 7.2.138 → 7.2.155 (fade5ed7) plus simplification pass (72e7d612); smoke PASS (7.2.155/7fac6b15), updater tests 20/20.
-- [ ] Bump app 0.4.52 → 0.4.53 (package.json, Cargo.toml, Cargo.lock, tauri.conf.json); RELEASE_NOTES v0.4.53 section.
-- [ ] Local gates: tsc, lint 0, format, vitest, cargo check/test/fmt.
-- [ ] Commit, push main, annotated tag v0.4.53; verify release workflow preflight and publication.
+- [x] Pin sidecar 7.2.138 → 7.2.155 (fade5ed7) plus simplification pass (72e7d612); checksum-verified download, smoke PASS (7.2.155/7fac6b15), updater tests 20/20.
+- [x] Bump app 0.4.52 → 0.4.53 (package.json, Cargo.toml, Cargo.lock, tauri.conf.json); RELEASE_NOTES v0.4.53 section (121c2574).
+- [x] Local gates: tsc clean, oxlint 0/0, oxfmt, vitest 11/11, cargo test 61/61, cargo fmt/check 0 warnings, updater tests 20/20, sidecar smoke PASS.
+- [x] Pushed main (c8ec786a..121c2574) + annotated tag v0.4.53. CI 34315322005 success (all 4 builds, incl. macOS-Intel). Release 34315326674 success: preflight 10s, 4 platform builds, changelog, publish, Discord; published 2026-09-09T06:26:22Z with 16 assets incl. latest.json (0.4.53, 10 platform targets); /releases/latest → v0.4.53.
+- Manual gates outstanding per runbook: Gate 1 clean-install launch per OS, Gate 3 provider OAuth smoke.
