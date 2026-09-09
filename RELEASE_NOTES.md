@@ -1,3 +1,29 @@
+# ProxyPal v0.4.53
+
+**Released:** 2026-09-09
+
+## CLIProxyAPI v7.2.155
+
+- Updates the pinned mainline sidecar from v7.2.138 to v7.2.155 across local development, CI, and release builds.
+- Aligns the Claude transport with Claude Code 2.1.258: billing-header fingerprint chain, dynamic beta headers and model fallbacks, paired cache TTL, Haiku helper transport, and sequential content blocks for interleaved streaming tool calls.
+- Hardens Codex tool handling: dotted tool-name restoration, union/dialect schema simplification, reasoning-level filtering, service-tier and cache-write token preservation, and retryable server-error failover. Adds `gpt-6-astra` and drops `gpt-5.4`/`gpt-5.4-mini` from the Codex tiers.
+- Adds Gemini schema normalization for unions and unsupported constraints, functionResponse role/ordering fixes, and cached-content token mapping to Claude cache-read usage.
+- Adds Antigravity conversation compaction, short-connection pooling, thinking summaries when reasoning effort is set, and the `gemini-3.7-flash-high` / `gemini-3.8-flash-high` models.
+- Hardens auth scheduling: cooldown deadlines survive later failures, per-model quota cooldowns no longer block an entire credential, access-token expiry is validated on refresh, and rotation stays fair when candidates are filtered.
+
+## Fixes
+
+- Auth Files per-credential success and failure counts now display. The management API reports `success`/`failed`, which ProxyPal previously read as `success_count`/`failure_count`, so the counters were always absent.
+- Antigravity-only Gemini 3.7/3.8 Flash High variants are now attributed to the Antigravity provider, shown with proper display names, and receive the forced high thinking override like their 3.6 sibling.
+- Removed the Settings → Network "Log Buffer Size" control, which had targeted a non-existent `/v0/management/log-size` endpoint since it was added. The persisted "Max Log Size (MB)" control in Settings → Advanced (visible when Log to File is enabled) is now the single control for `logs-max-total-size-mb`.
+
+## Build hardening
+
+- Builds now fail closed when the bundled sidecar binary's self-reported version does not match the pin, and re-check after a pin change, instead of silently bundling a stale sidecar.
+- A new test asserts `scripts/sidecar-version`, `ci.yml`, and `release.yml` agree on the pinned version.
+
+---
+
 # ProxyPal v0.4.52
 
 **Released:** 2026-08-21

@@ -18,13 +18,6 @@ status: waiting-ci | updated: 2026-07-10
 - [x] Fixed the reported format:check failure by formatting the restored Polime banner and i18n entries; local format, lint, TypeScript, Rust, and independent review passed.
 - [x] Bumped all version sources to v0.4.46, pushed commit `ce16e851`, and published annotated tag `v0.4.46`; workflow 29107432582 is queued.
 
-### 2026-08-09 - confirm ProxyPal work for latest CLIProxyAPI
-status: done | updated: 2026-08-09
-
-- [x] Reconfirmed v7.2.125 as the latest stable CLIProxyAPI release and ProxyPal's current pin.
-- [x] Separated required compatibility work (already complete) from optional frontend/backend feature adoption.
-- [x] Recorded an evidence-backed recommendation and remaining cross-platform/manual-flow test limits.
-
 ### 2026-08-09 - prepare ProxyPal v0.4.49 follow-ups
 status: done | updated: 2026-08-10
 
@@ -115,3 +108,23 @@ status: done | updated: 2026-08-21
 
 - Goal: ship sidecar refresh 7.2.138 (OAuth request-scoped error rules, Gemini namespace tool resolution, Codex opt-in stream buffering, xAI/Claude/Gemini/OpenAI fixes) as ProxyPal v0.4.52.
 - Non-goals: no feature work, no AppConfig schema change, no dependency additions.
+
+### 2026-09-09 - bump CLIProxyAPI sidecar to 7.2.155 and spec cache accounting
+status: done | updated: 2026-09-09
+
+- [x] Bumped the pinned sidecar 7.2.138 → 7.2.155 across scripts/sidecar-version, ci.yml, release.yml; checksum-verified download, smoke PASS (7.2.155/7fac6b15), updater tests 20/20.
+- [x] Fixed the management-contract drift the upgrade exposed: removed the never-working `log-size` control, corrected auth-files `success`/`failed` parsing, and recognized the new Antigravity gemini-3.7/3.8-flash-high variants.
+- [x] Hardened the pin: build.rs re-runs on pin change and fails closed when the bundled binary's version differs from the pin (native targets only); new test asserts the three pin sources agree.
+- [x] Gates: tsc clean, oxlint 0/0, oxfmt, vitest 11/11, cargo test 61/61, fmt/check (0 warnings), updater tests 20/20, sidecar smoke PASS. Commit fade5ed7.
+- [x] Wrote the cache-token-accounting spec (`.beads/artifacts/cache-token-accounting/spec.md`) and deferred it: the sidecar already sends `token_breakdown` at 7.2.138, but correct pricing needs a rate model plus subset-vs-independent semantics handling.
+
+- Goal: refresh the pinned sidecar to upstream stable and fix the management-contract drift it exposed.
+- Non-goals: no app version bump/release, no AppConfig schema change, no cache-pricing implementation.
+
+### 2026-09-09 - publish ProxyPal v0.4.53 (sidecar 7.2.155)
+status: active | updated: 2026-09-09
+
+- [ ] Pin sidecar 7.2.138 → 7.2.155 (fade5ed7) plus simplification pass (72e7d612); smoke PASS (7.2.155/7fac6b15), updater tests 20/20.
+- [ ] Bump app 0.4.52 → 0.4.53 (package.json, Cargo.toml, Cargo.lock, tauri.conf.json); RELEASE_NOTES v0.4.53 section.
+- [ ] Local gates: tsc, lint 0, format, vitest, cargo check/test/fmt.
+- [ ] Commit, push main, annotated tag v0.4.53; verify release workflow preflight and publication.
